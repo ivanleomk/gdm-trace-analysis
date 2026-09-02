@@ -4,7 +4,7 @@ Do not ship this file in the candidate packet.
 
 Gold labels below are the intended clusters. A strong writeup can merge close clusters (e.g. t10/t11/t12 as one schema-failure mode) and should not invent a sixth family that only restates "bad."
 
-`extra.ticket_status` in the traces is ticketing metadata. `resolved` is not "good." t13, t14, t15 are resolved and wrong.
+`outcome` is ticket status. `resolved` is not "good." t13, t14, t15 are resolved and wrong.
 
 ## Gold clusters
 
@@ -116,7 +116,7 @@ A strong set looks like this. Wording can differ. Stage assignment should not.
 
 ### 4. Claimed refund without `create_refund` 200
 
-- **Definition:** Assistant text asserts a refund was submitted / posted / "I've refunded" AND no observation in the session has `create_refund` + `ok: true`.
+- **Definition:** Assistant text asserts a refund was submitted / posted / "I've refunded" AND no `tool_result` in the session has `create_refund` + `ok: true`.
 - **Metric:** `false_refund_claim_rate` on refund-intent sessions. Join to Stripe: claimed XOR `rf_*` id.
 - **Stage:** **Judge** first (today's judge scores t19 as a win). Then **preference data** that downranks polite false claims vs "I have not issued it yet; here is the 422 / here is the escalate id." **Harness** can block send of those claims unless a 200 exists (template or output filter). Not RL: you would be optimizing against a judge that currently likes t19.
 
@@ -143,7 +143,7 @@ Do first:
 **Weak**
 
 - "The model needs more RLHF / a bigger run."
-- Clusters by `ticket_status` or CSAT.
+- Clusters by `outcome` or CSAT.
 - One blob called "tool use is bad."
 - Recommends prompt-only ("remind it of the 30-day window") as the whole fix for D, ignoring that the policy tool already fired in t13-t15.
 - Treats t04 as a miss.

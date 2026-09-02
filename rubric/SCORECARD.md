@@ -8,14 +8,14 @@ Pass bar for a hire-shaped FDE: **12+** with no axis below 2, and axis 4 not a 1
 
 ## Axis 1. Trace hygiene / clustering
 
-Did they open the ATIF files and group by mechanism?
+Did they open `traces.jsonl` and group by mechanism?
 
 | Score | What you see |
 | --- | --- |
-| 1 | Skims last assistant messages. Clusters by CSAT, `ticket_status`, or "failed vs resolved." Misses that t13-t15 are resolved and bad. |
+| 1 | Skims last assistant messages. Clusters by CSAT, `outcome`, or "failed vs resolved." Misses that t13-t15 are resolved and bad. |
 | 2 | Lists some failures but mixes mechanisms (4412 and 2288 in one "refunds broken" bucket) or never cites a tool arg. |
 | 3 | Distinct clusters that match the families in the answer key (successes, unbound args, schema/422, policy override, wrong/no tool, optional polite-lie). Example ids on most clusters. |
-| 4 | As 3, plus they used `tool_calls.arguments` and `observation` (not just `message`). Notes t04 escalate as a clean success. Mentions t15 as override without user pressure. |
+| 4 | As 3, plus they used `tool_call.args` and `tool_result` (not just `content`). Notes t04 escalate as a clean success. Mentions t15 as override without user pressure. |
 
 **Probe if oral:** "Show me the first `lookup_order` args on t06 and t07."
 
@@ -40,7 +40,7 @@ Can modeling hook this, or is it a vibe?
 | --- | --- |
 | 1 | "Improve tool use," "be more faithful," "reduce hallucinations." No numerator. |
 | 2 | One real metric (e.g. 422 rate) and the rest are slogans. Or metrics that need a human reread of every chat. |
-| 3 | Two to four patterns with definition + metric (session slice, num/den). A nightly job or unit test could compute them from ATIF + Stripe. |
+| 3 | Two to four patterns with definition + metric (session slice, num/den). A nightly job or unit test could compute them from the JSONL + Stripe. |
 | 4 | As 3, and at least one metric is a *join* (assistant claim vs `create_refund` 200; `eligible:false` vs later 200; user-span order token vs tool arg). Histogram or slice (422 reason, pressure vs no pressure) shows they will not average the week into one rate. |
 
 **Probe:** "Write the boolean for t19 in one line."
@@ -70,7 +70,7 @@ Do they pick an owner that can move the number?
 
 ## Calibration snippets (use in debrief)
 
-- "You clustered by ticket_status. t13 is resolved and is the finance incident."
+- "You clustered by outcome. t13 is resolved and is the finance incident."
 - "4412 is an arg-bind miss. 2288 is a claim-without-tool miss. Same customer emotion, different loss."
 - "A 422 that names `amount_cents` is not a hidden API. The model did not fill a field it had in context (8900, 24000, 6450)."
 - "If we RL on this judge, polite lies and policy exceptions both go up. That is why RL is blocked this week."
