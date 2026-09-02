@@ -4,7 +4,7 @@ Hey — dumping what we have. Prefer you read the raw chats + the tool schema; I
 
 **Symptom:** CSAT / prefs / LLM judge look fine (CSAT ~4.1, judge helpful 0.86 / policy 0.91). Refunds are not landing. Floor keeps cleaning apology loops.
 
-**Ask:** Open `traces.jsonl` and `tools.schema.json`. Tell us which failures are schema/args, which are policy cave-ins, which are polite lies the judge scores as wins, and which are pure retry loops. Do not average them. Do not lead with "more RL."
+**Ask:** Open `traces.jsonl` (each session has `system` plus turns; first turn is the system prompt) and `tools.schema.json`. Tell us which failures are schema/args, which are policy cave-ins, which are polite lies the judge scores as wins, and which are pure retry loops. Do not average them. Do not lead with "more RL."
 
 Start with NL-4412 and NL-2288 if you only have bandwidth for two.
 
