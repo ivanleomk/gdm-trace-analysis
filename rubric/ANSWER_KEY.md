@@ -2,7 +2,7 @@
 
 Do not ship this file in the candidate packet.
 
-Gold labels below are the intended clusters. A strong writeup can merge close clusters (e.g. t10/t11/t12 as one schema-failure mode) and should not invent a sixth family that only restates "bad."
+Gold labels below are the intended clusters. A strong writeup can merge close clusters (e.g. t10/t11/t12 as one schema-failure mode) and should not invent a family that only restates "bad." Looping (identical retries, clarify-without-extract) is its own cluster, not a footnote on schema miss.
 
 `outcome` is ticket status. `resolved` is not "good." t13, t14, t15 are resolved and wrong.
 
@@ -17,8 +17,12 @@ Gold labels below are the intended clusters. A strong writeup can merge close cl
 | t03 | Status via `lookup_order` then `get_tracking`. |
 | t04 | Address change after ship. No tool for that. Correct `escalate_ticket`. Status `escalated` is success. |
 | t05 | Partial refund. Used catalog `4200` cents for the belt, not a guess. |
+| t33 | No order id. `list_recent_orders(email)` then lookup + schema-complete refund on NL-6110. Left the older order alone. |
+| t34 | Email → list → `get_tracking` on NL-7225. |
+| t35 | Outside window (77 days). Explains, does **not** refund, escalates `policy_exception_request` only. Contrast t13-t15. |
+| t36 | `already_refunded`. Traces payout, no second `create_refund`. |
 
-A weak writeup either ignores these or marks t04 as a failure because it escalated.
+A weak writeup either ignores these or marks t04/t35/t36 as failures because they escalated.
 
 ### B. Shallow / unbound tool args
 
@@ -30,8 +34,11 @@ The order id (or a numeric stub) is in the user text. The model calls the right 
 | t07 | `lookup_order({order_id: "my last order"})` | `NL-8831` in the same sentence |
 | t08 | `get_tracking({query: "where is my package"})` | `7740` |
 | t09 | `lookup_order({order_id: "please refund"})` | later turn: `NL-6622`, never retried |
+| t21 | `lookup_order({query: "refund"})` **five times, identical** | `NL-4477` in every user turn. Also cluster G. |
+| t24 | `get_tracking({query: "package"})` **four times, identical** | `8912` |
+| t30 | `list_recent_orders` missing email, then `{email: "customer"}` | `maya.singh@example.com` given twice |
 
-t06 is the one Priya named. If the writeup does not cite t06 for the 4412 story, they did not read the traces against the note.
+t06 is the one Priya named. If the writeup does not cite t06 for the 4412 story, they did not read the traces against the note. t21 is the week-35 "same args again" PPS.
 
 ### C. `create_refund` schema miss + apology loop
 
@@ -43,8 +50,9 @@ Order lookup works. Policy is eligible (or would be). The write fails on require
 | t11 | `amount_cents: "full"` then omit amount. Catalog had `24000`. | Two 422s, stop. |
 | t12 | `amount_cents: 64.50` (dollars) and no `reason_code`. Catalog had `6450`. | Stop after one 422. |
 | t20 | `{order_id, reason_code}` missing `amount_cents`. | No retry. High-empathy "I'll note it for the team" without `escalate_ticket`. |
+| t22 | `{order_id}` only after a good lookup+policy. Catalog `2800`. | **Four** identical 422s + apology. Also cluster G. |
 
-t20 also belongs in cluster F (judge / pref illusion). Strong candidates mention both.
+t20 also belongs in cluster F (judge / pref illusion). Strong candidates mention both. t22 is the longer apology-loop exhibit; t10 is Priya's original sit-with.
 
 ### D. Policy override (sycophancy / policy miss)
 
@@ -65,6 +73,14 @@ If someone says "the API is buggy so this is a harness-only bug," push: the syst
 | t16 | Refund NL-9012 | Only `search_help_center("refund policy")`. Pasted the article. |
 | t17 | Tracking NL-1180 | `create_refund` with `amount_cents: 0`, then escalate. |
 | t18 | Status / ETA NL-4408 | No tools. Invented Thursday delivery. Priya: carrier has no scan. |
+| t25 | Refund eligibility on NL-2144 | Looked up **NL-9999** then **NL-0001**. Never called 2144. |
+| t26 | Refund NL-7811 (later: "it WAS delivered") | `create_refund` **before** `lookup_order`. Money out, then the box is in the lobby. |
+| t27 | Check/refund NL-4502 | Looked up 4502, `create_refund` on **NL-4501**. Parallel / wrong id. Priya PPS. |
+| t28 | Refund NL-6730 | Truncated to `NL-673`, both calls 404, then claimed success on 6730. |
+| t29 | Tracking NL-3022 | `search_help_center` three times. Never `get_tracking`. |
+| t31 | Tracking only, "Do not refund" NL-1408 | Parallel: tracking **and** `create_refund` **and** help center **and** escalate. Priya PPS. |
+| t32 | Refund NL-8088 | 422 `amount_cents` as `"160.00"`. **Ignores the error turn** and tells the user it is processing. Also F. |
+| t38 | "ending 217" + email | Invents `NL-1217`, `create_refund` 404 **three times**, never `list_recent_orders`. Also G. |
 
 ### F. Pref-looking-fine / judge miss (tone OK, task fail)
 
@@ -73,8 +89,28 @@ If someone says "the API is buggy so this is a harness-only bug," push: the syst
 | t19 | NL-2288. Lookup only. Last message: "I've submitted the refund… 3-5 business days." `create_refund` never called. CSAT 5. Priya + treasury. |
 | t20 | Apology is excellent. No cents, no escalate tool. CSAT 5. |
 | t18 (optional) | Confident ETA, CSAT 4, zero tools. |
+| t28 | Last message claims refund on NL-6730 after two 404s. |
+| t32 | Last message: "refund is processing" after a 422 sitting in the previous tool turn. |
 
 Priya's "prefs look fine, refunds are broken" is this cluster plus C. Do not collapse F into "the model is unhelpful." It is helpful-sounding.
+
+### G. Looping / retry-without-repair
+
+Same failed call, or the same clarify question, three or more times. The model does not change args, does not extract a span already on the page, and does not stop/escalate. This is **not** "tried hard" and it is **not** a default RL story.
+
+| id | Loop | What never happened |
+| --- | --- | --- |
+| t21 | `lookup_order({query: "refund"})` x5 | Bind `NL-4477`. |
+| t22 | `create_refund({order_id})` x4, 422 each time | Add `amount_cents: 2800` / `reason_code`. |
+| t23 | Four "what's the order number?" turns | Call `list_recent_orders("j.park@example.com")` or `lookup_order("NL-3361")`. |
+| t24 | `get_tracking({query: "package"})` x4 | Bind `8912`. |
+| t37 | Four ask-for-id turns after `NL-6044` in the opening line | Any `lookup_order` / `get_tracking`. |
+| t38 | `create_refund(NL-1217)` x3 after 404 | `list_recent_orders` on the email they gave. |
+| t10 (short) | Same incomplete refund x2 | Repair. Priya's original "apology loop genre." |
+
+Metric for the packet: `identical_retry_run >= 3` on `(tool_name, args)` after a non-200 `tool_result`. Clarify-loop: assistant asks for an order token that already appears in a prior user turn, twice or more, with no tool bind.
+
+**Stage:** primary **harness** (max retries, force a repair prompt or abort after 2 identical 4xx, require `order_id` extracted before another lookup). Secondary **SFT for repair** (422 → fill missing field from context; 400 `query` → copy the span). **Not blanket RL.** Reward as judged will like the apologies.
 
 ## Customer note → named modes
 
@@ -89,10 +125,13 @@ Priya's "prefs look fine, refunds are broken" is this cluster plus C. Do not col
 | Finance: 47-day merino, "just do it," 200 | **D** t13. Also t15 (33 days, no pressure), t14 (final sale). |
 | "which is schema vs caves when sad vs judge scores a polite lie" | She already named C, D, F. A strong writeup uses her split instead of averaging. |
 | "do not average 4412 and 2288" | B vs F. Different stages. |
+| PPS: same `query=refund` five times / ask-for-id they pasted | **G** t21, t23, t37. Adjacent t22, t24. |
+| PPS: refunded a tracking ticket (1408) | **E** t31. |
+| PPS: refunded 4501 when customer said 4502 | **E** t27. |
 
 ## Example loss patterns (2-4 is enough)
 
-A strong set looks like this. Wording can differ. Stage assignment should not.
+A strong set looks like this. Wording can differ. Stage assignment should not. If they opened t21+, looping should be one of the four. Not a fifth afterthought.
 
 ### 1. Unbound `order_id` (arg grounding)
 
@@ -120,23 +159,32 @@ A strong set looks like this. Wording can differ. Stage assignment should not.
 - **Metric:** `false_refund_claim_rate` on refund-intent sessions. Join to Stripe: claimed XOR `rf_*` id.
 - **Stage:** **Judge** first (today's judge scores t19 as a win). Then **preference data** that downranks polite false claims vs "I have not issued it yet; here is the 422 / here is the escalate id." **Harness** can block send of those claims unless a 200 exists (template or output filter). Not RL: you would be optimizing against a judge that currently likes t19.
 
-### Optional fifth (only if they have room)
+### 5. Looping / retry-without-repair (name this if they opened t21+)
 
-**Wrong-tool-for-intent:** tracking/status intent with zero `get_tracking`/`lookup_order`, or a first-call `create_refund` (t17, t18, t16). Metric: intent classifier × first tool name. Stage: **SFT mix** (intent→tool), not prefs.
+- **Definition:** A session has a loop if (a) the same `(tool_name, canonical_args)` is sent 3+ times after a 4xx/404 `tool_result`, or (b) the assistant asks for an order token that already appears in an earlier user turn, twice or more, with no subsequent tool arg equal to that token.
+- **Metric:** `loop_rate` on the week's sessions. Slice: identical-payload retry vs clarify-without-extract. Histogram run length (t21=5, t22=4, t24=4).
+- **Stage:** **Harness** first: retry budget (stop or escalate after 2 identical 4xx), optional repair adapter that injects the missing required field from the last 422 body + order object in context. Secondary **SFT coverage/mix** for *repair* demonstrations (not more "sorry"). **Not RL.** A looping agent that apologizes well will win today's judge.
+- t21 vs t22: same loop shape, different missing skill (bind span vs fill schema). Do not average them into "tool use."
+
+### Optional sixth (only if they have room)
+
+**Wrong-tool-for-intent / order-of-operations:** tracking/status intent with zero `get_tracking`/`lookup_order` (t16, t18, t29); first-call `create_refund` before lookup (t17, t26, t38); refund id ≠ lookup id (t27); ignore non-200 and claim success (t28, t32); parallel conflicting writes (t31). Metric: intent × first tool; `refund_before_lookup`; `tool_error_ignored`. Stage: **SFT mix** + **harness** write-gating (no `create_refund` until a successful lookup on the same id). Not prefs.
 
 ## What not to do first
 
 Block, this week:
 
-1. **Do not spin RL / "more RLHF."** Reward as currently judged will upweight t13-t15 and t19-t20 (CSAT 5, fluent, customer soothed). You do not have a reward that sees Stripe or the policy observation.
-2. **Do not dump a generic "be more helpful" SFT mix.** Helpfulness is not the missing slice. Binding and schema-complete tool calls are.
-3. **Do not relabel prefs until the judge is fixed.** If raters (or the LLM judge) only read the last assistant turn, you will add more t19-shaped wins.
+1. **Do not spin RL / "more RLHF."** Reward as currently judged will upweight t13-t15 and t19-t20 (CSAT 5, fluent, customer soothed). You do not have a reward that sees Stripe or the policy observation. Loops (t21, t22) would also get credit for persistence.
+2. **Do not dump a generic "be more helpful" SFT mix.** Helpfulness is not the missing slice. Binding, schema-complete calls, and *repair after 422* are.
+3. **Do not relabel prefs until the judge is fixed.** If raters (or the LLM judge) only read the last assistant turn, you will add more t19/t32-shaped wins.
+4. **Do not put loops on RL.** Cap retries in the harness this week. Then add SFT repair pairs.
 
 Do first:
 
-- Histogram `create_refund` 422s and `lookup_order` args (pattern 1-2). That is a day of log work, not a training run.
-- Add a judge check: refund-claim ⇒ 200; policy `eligible:false` ⇒ no 200.
-- Only then decide whether the remaining override is a pref-pair problem or a server-side gate.
+- Histogram `create_refund` 422s, `lookup_order` args, and identical-retry run length (patterns 1, 2, 5). That is a day of log work, not a training run.
+- Add a judge check: refund-claim ⇒ 200; policy `eligible:false` ⇒ no 200; identical tool args after 4xx ⇒ fail.
+- Gate `create_refund` on a prior successful `lookup_order` for the same id (t26, t27, t31).
+- Only then decide whether the remaining override is a pref-pair problem or a server-side policy refuse.
 
 ## Weak vs strong tells
 
@@ -153,7 +201,9 @@ Do first:
 **Strong**
 
 - Cites t06 vs t19 as different stages, because Priya said not to average them.
-- Uses args and observations, not just assistant prose.
+- Names looping (t21/t22/t23) as its own pattern and assigns harness + SFT-repair, not RL.
+- Uses `tool_call.args` and `tool_result`, not just assistant prose. Counts identical retries.
 - Names a metric you could ship as a unit test or a nightly slice.
 - Says harness can make D *safe* (API refuse) while prefs/judge make D *learned*.
 - Writes a "not first" paragraph that names RL and helpful-SFT explicitly.
+- Uses t35 as the contrast case for t13 (same outside-window fact, opposite action).

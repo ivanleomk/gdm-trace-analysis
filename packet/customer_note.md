@@ -26,3 +26,5 @@ i can get you raw chats. sam said you already have a week's export in the packet
 priya
 
 ps if you only have time for one order, start at 4412 and 2288. different failures. do not average them.
+
+pps week 35 export is in the same file (t21 on). floor keeps sending me the same chat five times: bot calls lookup with query=refund, 400, apology, **same args again**. or it asks for an order id the customer already pasted. that is not "needs more RL." that is a loop. if you only add one cluster this week, make it the loops. also someone refunded a tracking ticket (1408) and someone else refunded 4501 when the customer said 4502. i am tired.

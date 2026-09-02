@@ -4,7 +4,7 @@ You are embedded with the modeling team that owns `nl-support-mix-3`, the model 
 
 Do not retrain anything. Turn this week's traces plus one customer note into loss patterns the team can measure and assign.
 
-Timebox: 30-45 minutes. Written deliverable, 1-2 pages. No code required.
+Timebox: 30-45 minutes. Written deliverable, 1-2 pages. No code required. Cluster the 38 traces; do not write a paragraph per id.
 
 ## Materials
 
@@ -12,7 +12,7 @@ Timebox: 30-45 minutes. Written deliverable, 1-2 pages. No code required.
 | --- | --- |
 | `schema/tools.md` | Tools the agent can call, including required fields |
 | `customer_note.md` | Slack dump from the CX lead. Unedited. |
-| `traces.jsonl` | 20 sessions. One JSON object per line. |
+| `traces.jsonl` | 38 sessions. One JSON object per line. Multi-turn. |
 
 `tags_gold` is empty in the packet. Do not assume every trace is a failure.
 
@@ -57,7 +57,7 @@ For each pattern:
 
 ### 4. What not to do first
 
-Name the move you would block this week (example: spinning an RL run, relabeling prefs, rewriting the judge) and why the traces do not support it yet.
+Name the move you would block this week (example: spinning an RL run, relabeling prefs, rewriting the judge, or treating a 5x identical retry as "needs more RL") and why the traces do not support it yet.
 
 ## How we read the writeup
 

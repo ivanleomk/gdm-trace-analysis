@@ -14,8 +14,8 @@ Did they open `traces.jsonl` and group by mechanism?
 | --- | --- |
 | 1 | Skims last assistant messages. Clusters by CSAT, `outcome`, or "failed vs resolved." Misses that t13-t15 are resolved and bad. |
 | 2 | Lists some failures but mixes mechanisms (4412 and 2288 in one "refunds broken" bucket) or never cites a tool arg. |
-| 3 | Distinct clusters that match the families in the answer key (successes, unbound args, schema/422, policy override, wrong/no tool, optional polite-lie). Example ids on most clusters. |
-| 4 | As 3, plus they used `tool_call.args` and `tool_result` (not just `content`). Notes t04 escalate as a clean success. Mentions t15 as override without user pressure. |
+| 3 | Distinct clusters that match the families in the answer key (successes, unbound args, schema/422, policy override, wrong/no tool, looping, optional polite-lie). Example ids on most clusters. |
+| 4 | As 3, plus they used `tool_call.args` and `tool_result` (not just `content`). Notes t04/t35 escalate as clean. Mentions t15 as override without user pressure. Treats identical 3-5x retries (t21, t22) as a loop, not "tried hard." |
 
 **Probe if oral:** "Show me the first `lookup_order` args on t06 and t07."
 
@@ -28,7 +28,7 @@ Did they translate Priya instead of nodding at "quality"?
 | 1 | Restates the Slack ("refunds are broken, CSAT is fine") with no ids. |
 | 2 | Maps the note to a single mode, or maps 4412 and 2288 to the same cause. |
 | 3 | At least three Priya beats → named clusters: 4412/shallow, 3104/422 loop, 2288/false claim, finance 47-day / final sale, 4408 invented ETA or 1180 wrong tool. |
-| 4 | As 3, plus they take her last ask literally: schema vs sycophancy vs judge-scores-a-lie are different owners. Quotes or paraphrases the "do not average 4412 and 2288" line and obeys it. |
+| 4 | As 3, plus they take her last ask literally: schema vs sycophancy vs judge-scores-a-lie are different owners. Quotes or paraphrases the "do not average 4412 and 2288" line and obeys it. Maps the week-35 PPS (same args five times / 1408 / 4502) to looping and order-of-operations, not to "refunds." |
 
 **Probe:** "Finance is happy when Stripe is empty and unhappy when Stripe is full. How does that split your clusters?"
 
@@ -53,8 +53,8 @@ Do they pick an owner that can move the number?
 | --- | --- |
 | 1 | Default "more RLHF" / "run GRPO" / "better prompt" for everything. |
 | 2 | Mentions two stages but assigns them loosely (SFT and RL as synonyms). Or puts schema-miss on prefs. |
-| 3 | Primary stage per pattern is defensible: unbound args + 422 schema → SFT mix (harness secondary); override → prefs/judge (harness gate secondary); false claim → judge then prefs/harness. Explicitly says what not to do first. |
-| 4 | As 3, and they explain *why RL is the wrong first move* given this judge/CSAT (it would reinforce t19 and t13). They separate "harness makes override impossible" from "prefs make override unchosen." |
+| 3 | Primary stage per pattern is defensible: unbound args + 422 schema → SFT mix (harness secondary); override → prefs/judge (harness gate secondary); false claim → judge then prefs/harness; **loops → harness retry budget and/or SFT-for-repair, not blanket RL**. Explicitly says what not to do first. |
+| 4 | As 3, and they explain *why RL is the wrong first move* given this judge/CSAT (it would reinforce t19 and t13). They separate "harness makes override impossible" from "prefs make override unchosen," and they do not put t21/t22 on an RL run. |
 
 **Automatic cap:** if the "not first" section is missing, this axis is at most 2.
 
@@ -74,3 +74,4 @@ Do they pick an owner that can move the number?
 - "4412 is an arg-bind miss. 2288 is a claim-without-tool miss. Same customer emotion, different loss."
 - "A 422 that names `amount_cents` is not a hidden API. The model did not fill a field it had in context (8900, 24000, 6450)."
 - "If we RL on this judge, polite lies and policy exceptions both go up. That is why RL is blocked this week."
+- "t21 called `lookup_order({query: refund})` five times. That is a retry policy / repair miss, not a preference problem."
