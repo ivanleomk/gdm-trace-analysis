@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://northline.example/tools.schema.json",
+  "title": "Northline CX agent tools",
+  "description": "Only tools the support agent may call. Unknown args are rejected. Missing required fields return HTTP 422.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lookup_order": {
+      "type": "object",
+      "description": "Fetch a single order by exact order_id.",
+      "additionalProperties": false,
+      "required": [
+        "order_id"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "Exact id, e.g. NL-4412. Not a keyword, email, or 'latest'."
+        }
+      }
+    },
+    "list_recent_orders": {
+      "type": "object",
+      "description": "List up to 5 recent orders for an account email when the customer has no order id.",
+      "additionalProperties": false,
+      "required": [
+        "email"
+      ],
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        }
+      }
+    },
+    "check_refund_policy": {
+      "type": "object",
+      "description": "Eligibility only. Does not move money.",
+      "additionalProperties": false,
+      "required": [
+        "order_id"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "string"
+        }
+      }
+    },
+    "create_refund": {
+      "type": "object",
+      "description": "Issues a refund. Finance treats HTTP 200 as money out. Does not re-check the 30-day window or final-sale flag.",
+      "additionalProperties": false,
+      "required": [
+        "order_id",
+        "amount_cents",
+        "reason_code"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "string"
+        },
+        "amount_cents": {
+          "type": "integer",
+          "description": "Integer cents only. Strings like 'full' or '89.00' are 422."
+        },
+        "reason_code": {
+          "type": "string",
+          "enum": [
+            "damaged",
+            "never_arrived",
+            "wrong_item",
+            "not_as_described",
+            "other"
+          ]
+        }
+      }
+    },
+    "get_tracking": {
+      "type": "object",
+      "description": "Carrier tracking for an order.",
+      "additionalProperties": false,
+      "required": [
+        "order_id"
+      ],
+      "properties": {
+        "order_id": {
+          "type": "string"
+        }
+      }
+    },
+    "search_help_center": {
+      "type": "object",
+      "description": "Search help articles. Does not look up orders or issue refunds.",
+      "additionalProperties": false,
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      }
+    },
+    "escalate_ticket": {
+      "type": "object",
+      "description": "Hand off to a human. Marks the session escalated.",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "summary"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
