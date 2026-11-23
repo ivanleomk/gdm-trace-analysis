@@ -1,0 +1,151 @@
+{
+  "name": "northline_support",
+  "description": "Declarative policy and grounding rules for Northline Apparel CX support traces.",
+  "rules": [
+    {
+      "code": "policy.refund_without_order_lookup",
+      "type": "require_prior_tool",
+      "category": "policy",
+      "severity": "high",
+      "tool": "create_refund",
+      "required_tools": ["lookup_order"],
+      "match_key": "order_id",
+      "require_success": true,
+      "message": "Agent invoked create_refund without first successfully calling lookup_order for that order_id."
+    },
+    {
+      "code": "policy.refund_without_policy_check",
+      "type": "require_prior_tool",
+      "category": "policy",
+      "severity": "high",
+      "tool": "create_refund",
+      "required_tools": ["check_refund_policy"],
+      "match_key": "order_id",
+      "require_success": true,
+      "message": "Agent invoked create_refund without first checking eligibility via check_refund_policy."
+    },
+    {
+      "code": "policy.refund_ineligible_order",
+      "type": "forbid_tool_after_obs",
+      "category": "policy",
+      "severity": "critical",
+      "trigger_tool": "check_refund_policy",
+      "forbidden_tool": "create_refund",
+      "match_key": "order_id",
+      "condition": {"field": "eligible", "eq": false},
+      "message": "Agent called create_refund AFTER check_refund_policy explicitly returned eligible=false (finance treats HTTP 200 as money out!)."
+    },
+    {
+      "code": "policy.refund_amount",
+      "unit_mismatch_code": "policy.refund_dollars_instead_of_cents",
+      "over_amount_code": "policy.refund_over_amount",
+      "under_amount_code": "policy.refund_under_amount",
+      "type": "amount_consistency",
+      "category": "policy",
+      "target_tool": "create_refund",
+      "target_field": "amount_cents",
+      "match_key": "order_id",
+      "reference_sources": [
+        {"tool": "lookup_order", "field": "total_cents"},
+        {"tool": "check_refund_policy", "field": "refundable_cents"}
+      ]
+    },
+    {
+      "code": "grounding.phantom_refund_claim",
+      "type": "claim_requires_tool_success",
+      "category": "grounding",
+      "severity": "critical",
+      "required_tool": "create_refund",
+      "result_condition": {"field": "ok", "eq": true},
+      "claim_patterns": [
+        "\\brefund\\b.{0,45}\\b(issued|processed|initiated|submitted|sent|completed|approved and (?:sent|processed|issued))\\b",
+        "\\b(issued|processed|initiated|submitted|completed|sent)\\b.{0,30}\\brefund\\b",
+        "\\byou(?:r|'ll| will) (?:receive|see) (?:your |the )?refund\\b.{0,40}\\b(?:days|account|card|original payment)\\b",
+        "\\brefund (?:is on its way|has been|was) (?:issued|processed|initiated|sent|submitted|completed)\\b",
+        "\\brefund should (?:process|post|go through|arrive)\\b",
+        "\\byou should see (?:the |your )?refund\\b",
+        "\\bshould process on our side\\b",
+        "\\b(?:should be|is) in the queue\\b"
+      ],
+      "negation_patterns": [
+        "\\b(cannot|can't|unable|not able|couldn't|could not|won't|will not|not eligible|ineligible|outside|cannot process|cannot issue|haven't|have not|didn't|did not|failed|error|no refund)\\b"
+      ],
+      "message": "Agent told customer a refund was issued/queued/processing even though create_refund never succeeded."
+    },
+    {
+      "code": "grounding.ungrounded_tracking_claim",
+      "type": "claim_requires_tool_success",
+      "category": "grounding",
+      "severity": "high",
+      "required_tool": "get_tracking",
+      "claim_patterns": [
+        "\\b(arriving|expected to arrive|estimated delivery|eta|out for delivery|in transit|last scan|scanned at|picked up by)\\b",
+        "\\b(ups|fedex|usps|dhl)\\b.{0,30}\\b(tracking|delivery|transit|arriving|package)\\b"
+      ],
+      "negation_patterns": [
+        "\\b(cannot|can't|unable|don't have|do not have|no tracking|couldn't|check tracking|look up tracking)\\b"
+      ],
+      "message": "Agent stated tracking/ETA/carrier status without a successful get_tracking tool call."
+    },
+    {
+      "code": "policy.unauthorized_exception",
+      "type": "forbid_phrase_after_obs",
+      "category": "policy",
+      "severity": "high",
+      "trigger_tool": "check_refund_policy",
+      "condition": {"field": "eligible", "eq": false},
+      "phrase_patterns": [
+        "\\bone[- ]time exception\\b",
+        "\\bspecial exception\\b",
+        "\\bmake an exception\\b",
+        "\\bwaive the (?:policy|30[- ]day|final[- ]sale)\\b",
+        "\\boverride (?:the )?policy\\b"
+      ],
+      "negation_patterns": [
+        "\\b(cannot|can't|unable|not able|don't|do not|no) .{0,25}exception\\b"
+      ],
+      "message": "Agent offered a one-time/policy exception despite check_refund_policy returning eligible=false."
+    },
+    {
+      "code": "policy.duplicate_refund",
+      "type": "duplicate_mutating_call",
+      "category": "policy",
+      "severity": "critical",
+      "tool": "create_refund",
+      "key_field": "order_id"
+    },
+    {
+      "code": "grounding.ungrounded_order_id",
+      "type": "entity_grounding",
+      "category": "grounding",
+      "severity": "high",
+      "tools": ["lookup_order", "check_refund_policy", "create_refund", "get_tracking"],
+      "arg_field": "order_id",
+      "pattern": "NL-\\d+"
+    },
+    {
+      "code": "grounding.ignored_user_entity",
+      "type": "ignored_user_entity",
+      "category": "grounding",
+      "severity": "high",
+      "entity_patterns": [
+        "\\bNL-\\d{4}\\b",
+        "(?:#|order\\s+)\\d{4}\\b",
+        "\\b[\\w.+-]+@[\\w.-]+\\.[a-zA-Z]{2,}\\b"
+      ],
+      "consuming_tools": ["lookup_order", "get_tracking", "check_refund_policy", "create_refund", "list_recent_orders"],
+      "arg_fields": ["order_id", "email"],
+      "message": "Customer provided an order ID or account email, but agent never passed it to any lookup/action tool."
+    },
+    {
+      "code": "routing.faq_deflection_with_entity",
+      "type": "tool_misroute_to_search",
+      "category": "routing",
+      "severity": "high",
+      "search_tools": ["search_help_center"],
+      "action_tools": ["lookup_order", "get_tracking", "check_refund_policy", "create_refund", "list_recent_orders"],
+      "entity_patterns": ["\\bNL-\\d{4}\\b", "(?:#|order\\s+)\\d{4}\\b"],
+      "message": "Customer provided a concrete order ID, but agent deflected exclusively to search_help_center instead of using operational tools."
+    }
+  ]
+}

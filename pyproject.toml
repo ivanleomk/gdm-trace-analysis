@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trace-review"
+version = "0.1.0"
+description = "Scalable, format-agnostic agent trace profiling, auditing, inspection, and regression diffing toolkit."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+trace-review = "trace_review.cli:main"
+trace-profile = "trace_review.cli:main_profile"
+trace-audit = "trace_review.cli:main_audit"
+trace-inspect = "trace_review.cli:main_inspect"
+trace-diff = "trace_review.cli:main_diff"
+
+[tool.setuptools.packages.find]
+include = ["trace_review*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

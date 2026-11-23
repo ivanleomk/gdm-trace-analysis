@@ -1,0 +1,24 @@
+{
+  "name": "custom_support_log_v1",
+  "trace_id_path": "meta.conversation_id",
+  "agent_name_path": "meta.bot_name",
+  "model_name_path": "meta.model",
+  "outcome_path": "result.status",
+  "turns_path": "events",
+  "role_path": "actor",
+  "content_path": "text",
+  "timestamp_path": "ts",
+  "tool_calls_path": "actions",
+  "tool_call_id_path": "id",
+  "tool_name_path": "tool",
+  "tool_args_path": "params",
+  "tool_results_path": "outputs",
+  "tool_result_id_path": "action_id",
+  "tool_result_content_path": "payload",
+  "role_map": {
+    "customer": "user",
+    "bot": "agent",
+    "assistant": "agent",
+    "system": "system"
+  }
+}
